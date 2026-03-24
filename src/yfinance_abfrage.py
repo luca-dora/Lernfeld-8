@@ -1,11 +1,13 @@
 # Abfrage über yfinance library
 # Vorteil 1: müssen keinen API key managen, was später zu Nervkram mit der build pipeline führen kann
 # Vorteil 2: wir bekommen direkt "dataframes", die sich einfach mit pandas verarbeiten lassen, statt mühsam Daten via json zu parsen
-import yfinance as yf
+import yfinance_api as yfApi
+
+BRENT_OIL = "BZ=F"
 
 def get_oil_price():
     # Holt die Daten für Brent Oil
-    oil = yf.Ticker("BZ=F")
+    oil = yfApi.YfinanceApi(BRENT_OIL).call_api()
     # Holt den neuesten Kurs (1 Tag Historie)
     data = oil.history(period="1d")
     # bis einschließlich des gestrigen closing Kurses (-1)
