@@ -2,19 +2,31 @@ import http.client
 import os
 from dotenv import load_dotenv
 
-load_dotenv()
+RAPID_API = "apidojo-yahoo-finance-v1.p.rapidapi.com"
+PATH = "/stock/v2/get-timeseries?symbol=IBM&region=US"
 
-conn = http.client.HTTPSConnection("apidojo-yahoo-finance-v1.p.rapidapi.com")
+class Yahoo_Api:
 
-headers = {
-    'x-rapidapi-key': os.getenv("RAPIDAPI_KEY"),
-    'x-rapidapi-host': "apidojo-yahoo-finance-v1.p.rapidapi.com",
-    'Content-Type': "application/json"
-}
+    def __init__(self, path, api=RAPID_API):
+        self.api = api
+        self.path = path
 
-conn.request("GET", "/stock/v2/get-timeseries?symbol=IBM&region=US", headers=headers)
+    def callApi(self):
+        load_dotenv()
+        conn = http.client.HTTPSConnection(self.api)
 
-res = conn.getresponse()
-data = res.read()
+        headers = {
+            'x-rapidapi-key': os.getenv("RAPIDAPI_KEY"),
+            'x-rapidapi-host': RAPID_API,
+            'Content-Type': "application/json"
+        }
 
-print(data.decode("utf-8"))
+        conn.request("GET", self.path, headers=headers)
+
+        res = conn.getresponse()
+        data = res.read()
+
+        print(data.decode("utf-8"))
+
+
+Yahoo_Api(PATH).callApi()
