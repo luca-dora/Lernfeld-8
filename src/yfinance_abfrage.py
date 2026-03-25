@@ -8,7 +8,7 @@ from apis.finance_api import FinanceApi
 
 BRENT_OIL = "BZ=F"
 NATURAL_GAS = "NG=F"
-EUR_USD = "EURUSD=X"
+EUR_USD = "USDEUR=X"
 api: FinanceApi = yf_api.YfinanceApi()
 
 def get_oil_price():
@@ -19,9 +19,13 @@ def get_gas_price():
     gas = api.get_data(NATURAL_GAS)
     return __extract_last_from_ticker(gas)
 
-def get_eur_usd():
+def get_usd_eur():
     eur = api.get_data(EUR_USD)
     return __extract_last_from_ticker(eur)
+
+def usd_as_eur(usd: float):
+    rate = get_usd_eur()
+    return usd * rate
 
 def __check_is_ticker__(result):
     # TODO noch zu klären ob es einen Zweck gibt die andere Impl zu nutzen
@@ -38,7 +42,7 @@ def __extract_last_from_ticker(result):
 
 if __name__ == "__main__":
     try:
-        price = get_oil_price()
+        price = usd_as_eur(get_oil_price())
         print(f"Aktueller Brent Öl Preis: {price:.2f} USD")
     except Exception as e:
         print(f"Fehler beim Abruf: {e}")
