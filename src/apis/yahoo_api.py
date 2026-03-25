@@ -1,17 +1,19 @@
 import http.client
 import os
 from dotenv import load_dotenv
+from typing_extensions import override
+
+from .finance_api import FinanceApi
 
 RAPID_API = "apidojo-yahoo-finance-v1.p.rapidapi.com"
 PATH = "/stock/v2/get-timeseries?symbol=IBM&region=US"
 
-class Yahoo_Api:
-
-    def __init__(self, path, api=RAPID_API):
+class YahooApi(FinanceApi):
+    def __init__(self, api: str = RAPID_API):
         self.api = api
-        self.path = path
 
-    def callApi(self):
+    @override
+    def get_data(self, path: str):
         load_dotenv()
         conn = http.client.HTTPSConnection(self.api)
 
@@ -21,12 +23,9 @@ class Yahoo_Api:
             'Content-Type': "application/json"
         }
 
-        conn.request("GET", self.path, headers=headers)
+        conn.request("GET", path, headers=headers)
 
         res = conn.getresponse()
         data = res.read()
 
-        print(data.decode("utf-8"))
-
-
-Yahoo_Api(PATH).callApi()
+        return data.decode("utf-8")

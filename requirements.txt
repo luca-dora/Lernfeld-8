@@ -15,3 +15,4 @@ safety               # Scannt installierte Bibliotheken auf bekannte Sicherheits
 
 # --- Notifications ---
 plyer                # Ermöglicht lokale Desktop-Benachrichtigungen bei Preisalarmen
+typing-extensions
