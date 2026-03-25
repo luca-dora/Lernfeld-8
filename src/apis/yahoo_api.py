@@ -18,7 +18,7 @@ class YahooApi(FinanceApi):
         conn = http.client.HTTPSConnection(self.api)
 
         headers = {
-            'x-rapidapi-key': os.getenv("RAPIDAPI_KEY"),
+            'x-rapidapi-key': os.getenv("RAPIDAPI_KEY") or "",
             'x-rapidapi-host': RAPID_API,
             'Content-Type': "application/json"
         }
