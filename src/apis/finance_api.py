@@ -9,7 +9,7 @@ class FinanceApi(ABC):
     """
 
     @abstractmethod
-    def get_data(self, path):
+    def get_data(self, path: str):
         """Fetch financial data from the API.
         
         Returns:
