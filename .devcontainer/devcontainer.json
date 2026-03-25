@@ -1,0 +1,23 @@
+{
+    "name": "Python 3 Project",
+    "image": "mcr.microsoft.com/devcontainers/python:3.11",
+    
+    // Dieser Befehl wird ausgeführt, SOBALD der Codespace erstellt wurde:
+    "postCreateCommand": "pip install -r requirements.txt",
+
+    // Optionale nützliche VS Code Extensions für das Team:
+    "customizations": {
+        "vscode": {
+            "extensions": [
+                // Python extensions
+                "ms-python.python",
+                "ms-python.vscode-pylance",
+                "njpwerner.autodocstring",
+
+                // GitHub & CI/CD Support
+                "GitHub.vscode-github-actions",      // workflows verwalten & logs prüfen
+                "GitHub.vscode-pull-request-github" // PRs & Issues direkt im Editor
+            ]
+        }
+    }
+}
