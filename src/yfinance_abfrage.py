@@ -22,6 +22,8 @@ def get_current_prices_in_eur():
     # 3. EUR Umrechnung: Rohstoff-Preis * Wechselkurs
     oil_eur = latest[BRENT_OIL] * latest[USD_EUR]
     gas_eur = latest[NATURAL_GAS] * latest[USD_EUR]
+
+    # ACHTUNG: die Umrechnung ist (für die Vorgaben) jetzt vll. ZU simpel, da wir direkt Ticker USDEUR verwenden, und somit keine separate Umrechnungsfunktion benötigen
     
     return oil_eur, gas_eur
 
