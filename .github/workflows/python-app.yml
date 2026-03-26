@@ -36,7 +36,9 @@ jobs:
     # QA 2: Type Checking (Logikfehler einfangen)
     - name: Type check with mypy
       run: |
-        mypy . --ignore-missing-imports
+        mypy src/ --explicit-package-bases --ignore-missing-imports
+      # --explicit-package-bases sort dafür, dass mypy (durch __init__.py Dateien) versteht, wo es zu testen hat. 
+      # Behebt Problem mit der automatischen Pfadauflösung (exit code 2) 
 
     # QA 3: Security Check = prüft Bibliotheken auf Lücken
     - name: Security check with safety # Wir nutzen '|| true', damit die Pipeline nicht sofort abbricht, falls aber wir dokumentieren es.
