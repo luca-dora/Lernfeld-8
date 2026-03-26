@@ -1,18 +1,20 @@
 from abc import ABC, abstractmethod
-
+import pandas as pd
 
 class FinanceApi(ABC):
-    """Abstract base class for finance API implementations.
-    
-    Defines the interface that all finance API providers must implement.
-    This allows different API implementations to be easily swapped out.
+    """Abstrakte "mock Klasse" / Interface für Finanzdaten API Implementation.
+    Erlaubt ggf. Austausch der Datenquelle ohne die business logic zu stören.
     """
 
     @abstractmethod
-    def get_data(self, path: str):
+    def get_data(self, tickers: list[str], period: str) -> pd.DataFrame:
         """Fetch financial data from the API.
         
+        Args:
+            tickers: Eine Liste von Symbolen (z.B.["BZ=F", "NG=F"])
+            period: Der Zeitraum (z.B. "5d" für 5 Tage)
+            
         Returns:
-            The API response data (format depends on implementation)
+            pd.DataFrame: Eine Tabelle mit den historischen Kursen
         """
         pass
