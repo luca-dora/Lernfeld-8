@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 from unittest.mock import Mock, patch, MagicMock
 import pandas as pd
+import numpy as np
 import pytest
 import yfinance
 
@@ -18,14 +19,10 @@ class TestUsdAsEur:
     @patch('yfinance_abfrage.api.get_data')
     def test_usd_as_eur_conversion(self, mock_get_data):
         """Test that usd_as_eur correctly converts USD to EUR using the exchange rate."""
-        # Setup mock ticker - needs to be a yfinance.Ticker instance
-        mock_ticker = MagicMock(spec=yfinance.Ticker)
+        # Setup mock to return a Series with Close prices (as api.get_data() actually does)
+        mock_series = pd.Series([1.09])
         
-        # Create a DataFrame with a Close column
-        mock_history = pd.DataFrame({'Close': [1.09]})
-        mock_ticker.history.return_value = mock_history
-        
-        mock_get_data.return_value = mock_ticker
+        mock_get_data.return_value = mock_series
         
         # Test conversion: 100 USD at 1.09 EUR/USD = 109 EUR
         result = usd_as_eur(100)
@@ -34,10 +31,8 @@ class TestUsdAsEur:
     @patch('yfinance_abfrage.api.get_data')
     def test_usd_as_eur_zero_usd(self, mock_get_data):
         """Test that converting 0 USD returns 0 EUR."""
-        mock_ticker = MagicMock(spec=yfinance.Ticker)
-        mock_history = pd.DataFrame({'Close': [1.09]})
-        mock_ticker.history.return_value = mock_history
-        mock_get_data.return_value = mock_ticker
+        mock_series = pd.Series([1.09])
+        mock_get_data.return_value = mock_series
         
         result = usd_as_eur(0)
         assert result == 0
@@ -45,10 +40,8 @@ class TestUsdAsEur:
     @patch('yfinance_abfrage.api.get_data')
     def test_usd_as_eur_negative_usd(self, mock_get_data):
         """Test that negative USD values are handled (for consistency)."""
-        mock_ticker = MagicMock(spec=yfinance.Ticker)
-        mock_history = pd.DataFrame({'Close': [1.09]})
-        mock_ticker.history.return_value = mock_history
-        mock_get_data.return_value = mock_ticker
+        mock_series = pd.Series([1.09])
+        mock_get_data.return_value = mock_series
         
         # Test with negative value
         result = usd_as_eur(-50)
@@ -65,10 +58,8 @@ class TestUsdAsEur:
         ]
         
         for rate, usd_amount, expected_eur in test_cases:
-            mock_ticker = MagicMock(spec=yfinance.Ticker)
-            mock_history = pd.DataFrame({'Close': [rate]})
-            mock_ticker.history.return_value = mock_history
-            mock_get_data.return_value = mock_ticker
+            mock_series = pd.Series([rate])
+            mock_get_data.return_value = mock_series
             
             result = usd_as_eur(usd_amount)
             assert result == pytest.approx(expected_eur), \
@@ -77,22 +68,18 @@ class TestUsdAsEur:
     @patch('yfinance_abfrage.api.get_data')
     def test_get_usd_eur_returns_float(self, mock_get_data):
         """Test that get_usd_eur returns a numeric exchange rate."""
-        mock_ticker = MagicMock(spec=yfinance.Ticker)
-        mock_history = pd.DataFrame({'Close': [1.09]})
-        mock_ticker.history.return_value = mock_history
-        mock_get_data.return_value = mock_ticker
+        mock_series = pd.Series([1.09])
+        mock_get_data.return_value = mock_series
         
         result = get_usd_eur()
-        assert isinstance(result, (float, pd.Series, type(1.09)))
+        assert isinstance(result, (float, int, np.floating))
         assert result > 0, "Exchange rate should be positive"
 
     @patch('yfinance_abfrage.api.get_data')
     def test_usd_as_eur_with_fractional_amounts(self, mock_get_data):
         """Test conversion with decimal USD amounts."""
-        mock_ticker = MagicMock(spec=yfinance.Ticker)
-        mock_history = pd.DataFrame({'Close': [1.09]})
-        mock_ticker.history.return_value = mock_history
-        mock_get_data.return_value = mock_ticker
+        mock_series = pd.Series([1.09])
+        mock_get_data.return_value = mock_series
         
         result = usd_as_eur(99.99)
         assert result == pytest.approx(109.98, rel=1e-2)
