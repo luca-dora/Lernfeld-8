@@ -1,12 +1,11 @@
 from pandas import Series
 
-from apis import yfinance_api as yf_api
 from apis.yfinance_api import YfinanceApi
 
 BRENT_OIL = "BZ=F"
 NATURAL_GAS = "NG=F"
 EUR_USD = "USDEUR=X"
-api: YfinanceApi = yf_api.YfinanceApi()
+api: YfinanceApi = YfinanceApi()
 
 
 def get_latest_oil_price() -> float:
