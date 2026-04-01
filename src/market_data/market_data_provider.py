@@ -83,11 +83,11 @@ class MarketDataProvider:
         
         df.index.name = "Datetime"
         df = df.reset_index()
-        
+
         df["Datetime"] = pd.to_datetime(df["Datetime"])
         if pd.api.types.is_datetime64tz_dtype(df["Datetime"]):
             df["Datetime"] = df["Datetime"].dt.tz_convert("Europe/Berlin").dt.tz_localize(None)
-        
+
         df = df.rename(columns={"Close": "Preis (USD)"})
         return df
 
