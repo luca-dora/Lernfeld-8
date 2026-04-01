@@ -1,30 +1,19 @@
-"""
-Rohstoff-Dashboard – Streamlit UI
-Zeigt aktuelle Brent-Öl und Erdgas-Preise mit historischem Kursverlauf.
-Nutzt die bestehenden yfinance-Schnittstellen aus src/.
-"""
-
-import sys
-from pathlib import Path
-
 import pandas as pd
 import plotly.graph_objects as go
 import streamlit as st
+from market_data import (
+    TICKER_MAP,
+    MarketDataProvider,
+    CommodityPriceProvider,
+    CurrencyConverter,
+)
 
-# ─── Pfad zu src/ hinzufügen ───────────────────────────────────────────────
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+# ─── Instances ──────────────────────────────────────────────────────────────
 
-from apis.yfinance_api import YfinanceApi
+commodity_provider = CommodityPriceProvider()
+currency_converter = CurrencyConverter()
 
-# ─── Ticker-Konstanten ─────────────────────────────────────────────────────
-TICKER_MAP: dict[str, str] = {
-    "Brent Oil (BZ=F)": "BZ=F",
-    "Natural Gas (NG=F)": "NG=F",
-}
-
-CURRENCY_TICKER = "USDEUR=X"
-
-# Farbpalette
+# ─── Konstanten ──────────────────────────────────────────────────────────────
 COLOR_PRIMARY = "#E8A838"   # Goldorange – Energie / Rohstoffe
 COLOR_ACCENT  = "#E05C2A"   # Terrakotta
 COLOR_BG      = "#0E1117"   # Streamlit dark default
@@ -34,62 +23,6 @@ COLOR_MUTED   = "#6B7280"
 
 
 # ─── Hilfsfunktionen ────────────────────────────────────────────────────────
-
-@st.cache_data(ttl=300)   # 5 Min. Cache, dann neuer API-Call
-def fetch_ohlc(ticker: str, period: str = "5d", interval: str = "5m") -> pd.DataFrame:
-    """Ruft OHLCV-Daten via yfinance ab und bereitet sie für Plotly auf."""
-    api = YfinanceApi(period=period, interval=interval)
-    raw = api.get_data([ticker])
-
-    # yfinance liefert je nach Version einen Series oder DataFrame mit ggf. MultiIndex
-    if isinstance(raw, pd.DataFrame):
-        # MultiIndex-Spalten flatten: ("Close", "BZ=F") → "Close"
-        if isinstance(raw.columns, pd.MultiIndex):
-            raw.columns = raw.columns.get_level_values(0)
-        df = raw.copy()
-    else:
-        # Series → DataFrame
-        df = raw.to_frame(name="Close")
-
-    # Sicherstellen, dass "Close" vorhanden ist; sonst erste numerische Spalte nehmen
-    if "Close" not in df.columns:
-        numeric_cols = df.select_dtypes("number").columns
-        if len(numeric_cols) == 0:
-            raise ValueError(f"Keine numerischen Spalten in den yfinance-Daten für {ticker}. Spalten: {list(df.columns)}")
-        df = df.rename(columns={numeric_cols[0]: "Close"})
-
-    # NaN-Zeilen entfernen (Marktschlusspausen) – BEVOR wir umbenennen
-    df = df[["Close"]].copy()
-    df = df.dropna(subset=["Close"])
-
-    df.index.name = "Datetime"
-    df = df.reset_index()
-
-    # Zeitzone entfernen (Plotly mag tz-naive Timestamps lieber)
-    if pd.api.types.is_datetime64tz_dtype(df["Datetime"]):
-        df["Datetime"] = df["Datetime"].dt.tz_convert("Europe/Berlin").dt.tz_localize(None)
-
-    # Umbenennen erst NACH dropna
-    df = df.rename(columns={"Close": "Preis (USD)"})
-    return df
-
-
-@st.cache_data(ttl=300)
-def fetch_eur_rate() -> float:
-    """Gibt den aktuellen USD→EUR Kurs zurück."""
-    api = YfinanceApi(period="1d", interval="5m")
-    series = api.get_data([CURRENCY_TICKER])
-    if isinstance(series, pd.DataFrame):
-        return float(series.iloc[-1].item())
-    return float(series.iloc[-1])
-
-
-def usd_to_eur(df: pd.DataFrame, rate: float) -> pd.DataFrame:
-    """Fügt eine EUR-Preisspalte hinzu."""
-    df = df.copy()
-    df["Preis (EUR)"] = df["Preis (USD)"] * rate
-    return df
-
 
 def build_chart(
     df: pd.DataFrame,
@@ -162,11 +95,6 @@ def build_chart(
     return fig
 
 
-def delta_percent(df: pd.DataFrame, col: str) -> float:
-    """Prozentuale Veränderung: letzter vs. erster Wert im DataFrame."""
-    if len(df) < 2:
-        return 0.0
-    return float((df[col].iloc[-1] - df[col].iloc[0]) / df[col].iloc[0] * 100)
 
 
 # ─── Seiten-Layout ─────────────────────────────────────────────────────────
@@ -233,7 +161,7 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    refresh = st.button("🔄  Daten aktualisieren", use_container_width=True)
+    refresh = st.button("🔄  Daten aktualisieren", width='stretch')
     if refresh:
         st.cache_data.clear()
         st.rerun()
@@ -262,7 +190,7 @@ if not selected_labels:
 eur_rate: float = 1.0
 if currency == "EUR":
     with st.spinner("EUR/USD-Kurs wird geladen …"):
-        eur_rate = fetch_eur_rate()
+        eur_rate = currency_converter.get_exchange_rate("USD", "EUR")
 
 # ─── Metriken-Zeile ─────────────────────────────────────────────────────────
 
@@ -273,16 +201,17 @@ dataframes: dict[str, pd.DataFrame] = {}
 for col_ui, label in zip(metric_cols, selected_labels):
     ticker = TICKER_MAP[label]
     with st.spinner(f"{label} wird geladen …"):
-        df = fetch_ohlc(ticker)
+        provider = MarketDataProvider(period="5d", interval="5m")
+        df = provider.get_ohlc_data(ticker)
 
     if currency == "EUR":
-        df = usd_to_eur(df, eur_rate)
+        df = currency_converter.add_target_currency(df, "Preis (USD)", "USD", "EUR")
 
     dataframes[label] = df
 
     price_col = f"Preis ({currency})"
     latest_price = df[price_col].iloc[-1]
-    delta = delta_percent(df, price_col)
+    delta = provider.calculate_delta_percent(df, price_col)
 
     short_name = label.split(" ")[0] + " " + label.split(" ")[1]  # "Brent Oil"
     col_ui.metric(
@@ -299,7 +228,7 @@ chart_colors = [COLOR_PRIMARY, "#5BA3D9"]   # Orange / Blau
 
 for (label, df), color in zip(dataframes.items(), chart_colors):
     fig = build_chart(df, label, currency, color)
-    st.plotly_chart(fig, use_container_width=True)
+    st.plotly_chart(fig, width='stretch')
 
 # ─── Rohdaten-Tabelle (aufklappbar) ─────────────────────────────────────────
 
@@ -309,6 +238,6 @@ with st.expander("📋  Rohdaten anzeigen"):
         show_cols = ["Datetime", f"Preis ({currency})"]
         st.dataframe(
             df[show_cols].tail(50).sort_values("Datetime", ascending=False),
-            use_container_width=True,
+            width='stretch',
             hide_index=True,
         )

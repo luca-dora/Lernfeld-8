@@ -1,55 +1,52 @@
-"""Tests for the usd_as_eur function in yfinance_abfrage module."""
+"""Tests for the CurrencyConverter class in market_data module."""
 import sys
 from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 import pandas as pd
 import numpy as np
 import pytest
-import yfinance
 
 # Add src to path so we can import the module
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from yfinance_abfrage import usd_as_eur, get_usd_eur
+from market_data import CurrencyConverter
 
 
-class TestUsdAsEur:
-    """Test suite for USD to EUR conversion function."""
+class TestCurrencyConverter:
+    """Test suite for CurrencyConverter class."""
 
-    @patch('yfinance_abfrage.api.get_data')
-    def test_usd_as_eur_conversion(self, mock_get_data):
-        """Test that usd_as_eur correctly converts USD to EUR using the exchange rate."""
-        # Setup mock to return a Series with Close prices (as api.get_data() actually does)
-        mock_series = pd.Series([1.09])
+    @patch('market_data.currency_converter.CurrencyConverter.get_exchange_rate')
+    def test_convert_amount_usd_to_eur(self, mock_rate):
+        """Test that convert_amount correctly converts USD to EUR."""
+        mock_rate.return_value = 1.09
         
-        mock_get_data.return_value = mock_series
-        
-        # Test conversion: 100 USD at 1.09 EUR/USD = 109 EUR
-        result = usd_as_eur(100)
+        converter = CurrencyConverter()
+        result = converter.convert_amount(100, "USD", "EUR")
         assert result == pytest.approx(109.0)
 
-    @patch('yfinance_abfrage.api.get_data')
-    def test_usd_as_eur_zero_usd(self, mock_get_data):
-        """Test that converting 0 USD returns 0 EUR."""
-        mock_series = pd.Series([1.09])
-        mock_get_data.return_value = mock_series
+    @patch('market_data.currency_converter.CurrencyConverter.get_exchange_rate')
+    def test_convert_amount_zero(self, mock_rate):
+        """Test that converting 0 amount returns 0."""
+        mock_rate.return_value = 1.09
         
-        result = usd_as_eur(0)
+        converter = CurrencyConverter()
+        result = converter.convert_amount(0, "USD", "EUR")
         assert result == 0
 
-    @patch('yfinance_abfrage.api.get_data')
-    def test_usd_as_eur_negative_usd(self, mock_get_data):
-        """Test that negative USD values are handled (for consistency)."""
-        mock_series = pd.Series([1.09])
-        mock_get_data.return_value = mock_series
+    @patch('market_data.currency_converter.CurrencyConverter.get_exchange_rate')
+    def test_convert_amount_negative(self, mock_rate):
+        """Test that negative amounts are handled."""
+        mock_rate.return_value = 1.09
         
-        # Test with negative value
-        result = usd_as_eur(-50)
+        converter = CurrencyConverter()
+        result = converter.convert_amount(-50, "USD", "EUR")
         assert result == pytest.approx(-54.5)
 
-    @patch('yfinance_abfrage.api.get_data')
-    def test_usd_as_eur_various_rates(self, mock_get_data):
+    @patch('market_data.currency_converter.CurrencyConverter.get_exchange_rate')
+    def test_convert_amount_various_rates(self, mock_rate):
         """Test conversion with various exchange rates."""
+        converter = CurrencyConverter()
+        
         test_cases = [
             (1.0, 100, 100.0),      # 1.0 rate: 100 USD = 100 EUR
             (1.1, 100, 110.0),      # 1.1 rate: 100 USD = 110 EUR
@@ -58,30 +55,29 @@ class TestUsdAsEur:
         ]
         
         for rate, usd_amount, expected_eur in test_cases:
-            mock_series = pd.Series([rate])
-            mock_get_data.return_value = mock_series
+            mock_rate.return_value = rate
             
-            result = usd_as_eur(usd_amount)
+            result = converter.convert_amount(usd_amount, "USD", "EUR")
             assert result == pytest.approx(expected_eur), \
                 f"Failed for rate {rate} and USD {usd_amount}: expected {expected_eur}, got {result}"
 
-    @patch('yfinance_abfrage.api.get_data')
-    def test_get_usd_eur_returns_float(self, mock_get_data):
-        """Test that get_usd_eur returns a numeric exchange rate."""
-        mock_series = pd.Series([1.09])
-        mock_get_data.return_value = mock_series
+    @patch('market_data.currency_converter.CurrencyConverter.get_exchange_rate')
+    def test_get_exchange_rate_returns_float(self, mock_rate):
+        """Test that get_exchange_rate returns a numeric exchange rate."""
+        mock_rate.return_value = 1.09
         
-        result = get_usd_eur()
+        converter = CurrencyConverter()
+        result = converter.get_exchange_rate("USD", "EUR")
         assert isinstance(result, (float, int, np.floating))
         assert result > 0, "Exchange rate should be positive"
 
-    @patch('yfinance_abfrage.api.get_data')
-    def test_usd_as_eur_with_fractional_amounts(self, mock_get_data):
-        """Test conversion with decimal USD amounts."""
-        mock_series = pd.Series([1.09])
-        mock_get_data.return_value = mock_series
+    @patch('market_data.currency_converter.CurrencyConverter.get_exchange_rate')
+    def test_convert_amount_with_fractional(self, mock_rate):
+        """Test conversion with decimal amounts."""
+        mock_rate.return_value = 1.09
         
-        result = usd_as_eur(99.99)
+        converter = CurrencyConverter()
+        result = converter.convert_amount(99.99, "USD", "EUR")
         assert result == pytest.approx(109.98, rel=1e-2)
 
 
