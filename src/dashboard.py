@@ -14,6 +14,13 @@ currency_converter = CurrencyConverter()
 
 def build_chart(df: pd.DataFrame, label: str, currency: str) -> go.Figure:
     price_col = f"Preis ({currency})"
+    
+    # 20260407 Einheit für Achsenbeschriftung basierend auf Rohstoff-Namen festlegen
+    einheit = ""
+    if "Brent" in label or "Oil" in label or "Öl" in label:
+        einheit = " / Barrel"
+    elif "Gas" in label:
+        einheit = " / MMBtu"
 
     fig = go.Figure()
 
@@ -55,7 +62,8 @@ def build_chart(df: pd.DataFrame, label: str, currency: str) -> go.Figure:
             title="Datum / Uhrzeit (Berlin)",
             tickformat="%d.%m %H:%M",
         ),
-        yaxis=dict(title=f"Preis ({currency})"),
+        # 20260407 Einheit an der Y-Achse mit anzeigen
+        yaxis=dict(title=f"Preis ({currency}{einheit})"),
         legend=dict(orientation="h", y=-0.18),
         margin=dict(l=10, r=10, t=50, b=10),
         height=420,
