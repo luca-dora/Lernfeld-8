@@ -1,0 +1,17 @@
+# Datenbeschaffung & Verarbeitung
+yfinance             # Schnittstelle für die benötigten Kurse
+pandas               # Tabellenverarbeitung/Währungsumrechnung
+
+# --- UI / Visualisierung ---
+streamlit            # interaktive Web-Dashboards
+plotly               # interaktive Graphen
+
+# --- QS bzw. CI/CD (Pipeline) ---
+pytest               # automatisierte Unit- und Integrationstests
+flake8               # Linter
+mypy                 # Prüfung von Datentypen (Vermeidung Logikfehler)
+safety               # Scannt installierte Bibliotheken auf bekannte Sicherheitslücken (einfache Umsetzung der QS Anforderung)
+
+# --- Notifications ---
+plyer                # Ermöglicht lokale Desktop-Benachrichtigungen bei Preisalarmen
+typing-extensions
