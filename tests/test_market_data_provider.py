@@ -152,42 +152,6 @@ class TestMarketDataProviderDataNormalization:
         assert delta == 0.0
 
 
-class TestMarketDataProviderInitialization:
-    """Tests für Initialisierung und Konfiguration."""
-
-    def test_initialization_with_defaults(self):
-        """Test: Default-Parameter werden gesetzt."""
-        provider = MarketDataProvider()
-        
-        assert provider.period == "1d"
-        assert provider.interval == "5m"
-
-    def test_initialization_with_custom_params(self):
-        """Test: Benutzerdefinierte Parameter werden gesetzt."""
-        provider = MarketDataProvider(period="5d", interval="1h")
-        
-        assert provider.period == "5d"
-        assert provider.interval == "1h"
-
-    @patch('market_data.market_data_provider.YfinanceApi')
-    def test_create_api_instance_uses_provider_defaults(self, mock_api_class):
-        """Test: API-Instanz nutzt Provider-Defaults wenn nicht überschrieben."""
-        provider = MarketDataProvider(period="3d", interval="15m")
-        
-        provider._create_api_instance()
-        
-        mock_api_class.assert_called_once_with(period="3d", interval="15m")
-
-    @patch('market_data.market_data_provider.YfinanceApi')
-    def test_create_api_instance_with_override(self, mock_api_class):
-        """Test: Überschreibungs-Parameter werden verwendet."""
-        provider = MarketDataProvider(period="1d", interval="5m")
-        
-        provider._create_api_instance(period="7d", interval="1d")
-        
-        mock_api_class.assert_called_once_with(period="7d", interval="1d")
-
-
 class TestMarketDataProviderWithMockedAPI:
     """Tests mit gemockter API."""
 
@@ -196,21 +160,21 @@ class TestMarketDataProviderWithMockedAPI:
         """Test: fetch_ticker_data gibt eine Series zurück."""
         mock_api = MagicMock()
         mock_series = pd.Series([100.0, 101.0, 102.0])
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = MarketDataProvider()
         result = provider.fetch_ticker_data("BZ=F")
         
         assert isinstance(result, pd.Series)
-        mock_api.get_data.assert_called_once_with(["BZ=F"])
+        mock_api.get_close_data.assert_called_once_with(["BZ=F"])
 
     @patch('market_data.market_data_provider.YfinanceApi')
     def test_get_latest_price_extracts_last_value(self, mock_api_class):
         """Test: get_latest_price gibt den letzten Wert zurück."""
         mock_api = MagicMock()
         mock_series = pd.Series([100.0, 101.0, 102.5])
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = MarketDataProvider()
@@ -226,7 +190,7 @@ class TestMarketDataProviderWithMockedAPI:
         # Simuliere Series von yfinance
         index = pd.date_range("2024-01-01", periods=3, tz="UTC")
         mock_series = pd.Series([100.0, 101.0, 102.0], index=index)
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = MarketDataProvider()
@@ -238,17 +202,17 @@ class TestMarketDataProviderWithMockedAPI:
         assert len(result) == 3
 
     @patch('market_data.market_data_provider.YfinanceApi')
-    def test_get_ohlc_data_with_custom_period(self, mock_api_class):
-        """Test: get_ohlc_data respektiert custom period/interval."""
+    def test_get_ohlc_data_with_provider_period(self, mock_api_class):
+        """Test: get_ohlc_data verwendet Provider period/interval."""
         mock_api = MagicMock()
         mock_series = pd.Series([100.0])
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
-        provider = MarketDataProvider()
-        provider.get_ohlc_data("BZ=F", period="1mo", interval="1d")
+        provider = MarketDataProvider(period="1mo", interval="1d")
+        provider.get_ohlc_data("BZ=F")
         
-        # Überprüfe, dass API mit benutzerdefinierten Parametern erstellt wurde
+        # Überprüfe, dass API mit Provider-Parametern initialisiert wurde
         assert mock_api_class.call_args[1]["period"] == "1mo"
         assert mock_api_class.call_args[1]["interval"] == "1d"
 

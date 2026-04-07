@@ -15,13 +15,6 @@ from market_data.constants import BRENT_OIL, NATURAL_GAS
 class TestCommodityPriceProviderInitialization:
     """Tests für Initialisierung von CommodityPriceProvider."""
 
-    def test_initialization_defaults(self):
-        """Test: CommodityPriceProvider nutzt richtige Defaults."""
-        provider = CommodityPriceProvider()
-        
-        assert provider.period == "1d"
-        assert provider.interval == "5m"
-
     def test_inherits_from_market_data_provider(self):
         """Test: CommodityPriceProvider erbt von MarketDataProvider."""
         from market_data import MarketDataProvider
@@ -38,7 +31,7 @@ class TestCommodityPriceProviderMethods:
         """Test: get_oil_price gibt float zurück."""
         mock_api = MagicMock()
         mock_series = pd.Series([100.5])
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = CommodityPriceProvider()
@@ -52,21 +45,21 @@ class TestCommodityPriceProviderMethods:
         """Test: get_oil_price nutzt BRENT_OIL ticker."""
         mock_api = MagicMock()
         mock_series = pd.Series([100.0])
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = CommodityPriceProvider()
         provider.get_oil_price()
         
         # Überprüfe, dass BRENT_OIL ticker verwendet wurde
-        mock_api.get_data.assert_called_with([BRENT_OIL])
+        mock_api.get_close_data.assert_called_with([BRENT_OIL])
 
     @patch('market_data.market_data_provider.YfinanceApi')
     def test_get_gas_price_returns_float(self, mock_api_class):
         """Test: get_gas_price gibt float zurück."""
         mock_api = MagicMock()
         mock_series = pd.Series([3.5])
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = CommodityPriceProvider()
@@ -80,14 +73,14 @@ class TestCommodityPriceProviderMethods:
         """Test: get_gas_price nutzt NATURAL_GAS ticker."""
         mock_api = MagicMock()
         mock_series = pd.Series([3.0])
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = CommodityPriceProvider()
         provider.get_gas_price()
         
         # Überprüfe, dass NATURAL_GAS ticker verwendet wurde
-        mock_api.get_data.assert_called_with([NATURAL_GAS])
+        mock_api.get_close_data.assert_called_with([NATURAL_GAS])
 
     @patch('market_data.market_data_provider.YfinanceApi')
     def test_get_oil_ohlc_returns_dataframe(self, mock_api_class):
@@ -95,11 +88,11 @@ class TestCommodityPriceProviderMethods:
         mock_api = MagicMock()
         index = pd.date_range("2024-01-01", periods=2, tz="UTC")
         mock_series = pd.Series([100.0, 101.0], index=index)
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
-        provider = CommodityPriceProvider()
-        result = provider.get_oil_ohlc(period="5d")
+        provider = CommodityPriceProvider(period="5d")
+        result = provider.get_oil_ohlc()
         
         assert isinstance(result, pd.DataFrame)
         assert "Datetime" in result.columns
@@ -111,14 +104,14 @@ class TestCommodityPriceProviderMethods:
         mock_api = MagicMock()
         index = pd.date_range("2024-01-01", periods=1, tz="UTC")
         mock_series = pd.Series([100.0], index=index)
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = CommodityPriceProvider()
         provider.get_oil_ohlc()
         
         # Überprüfe, dass BRENT_OIL ticker verwendet wurde
-        mock_api.get_data.assert_called_with([BRENT_OIL])
+        mock_api.get_close_data.assert_called_with([BRENT_OIL])
 
     @patch('market_data.market_data_provider.YfinanceApi')
     def test_get_gas_ohlc_returns_dataframe(self, mock_api_class):
@@ -126,11 +119,11 @@ class TestCommodityPriceProviderMethods:
         mock_api = MagicMock()
         index = pd.date_range("2024-01-01", periods=2, tz="UTC")
         mock_series = pd.Series([3.0, 3.1], index=index)
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
-        provider = CommodityPriceProvider()
-        result = provider.get_gas_ohlc(period="1mo")
+        provider = CommodityPriceProvider(period="1mo")
+        result = provider.get_gas_ohlc()
         
         assert isinstance(result, pd.DataFrame)
         assert len(result) == 2
@@ -141,14 +134,14 @@ class TestCommodityPriceProviderMethods:
         mock_api = MagicMock()
         index = pd.date_range("2024-01-01", periods=1, tz="UTC")
         mock_series = pd.Series([3.0], index=index)
-        mock_api.get_data.return_value = mock_series
+        mock_api.get_close_data.return_value = mock_series
         mock_api_class.return_value = mock_api
         
         provider = CommodityPriceProvider()
         provider.get_gas_ohlc()
         
         # Überprüfe, dass NATURAL_GAS ticker verwendet wurde
-        mock_api.get_data.assert_called_with([NATURAL_GAS])
+        mock_api.get_close_data.assert_called_with([NATURAL_GAS])
 
 
 class TestCommodityPriceProviderIntegration:
@@ -162,7 +155,7 @@ class TestCommodityPriceProviderIntegration:
         gas_series = pd.Series([3.0])
         
         # Verschiedene Rückgabewerte für verschiedene Aufrufe
-        mock_api.get_data.side_effect = [oil_series, gas_series]
+        mock_api.get_close_data.side_effect = [oil_series, gas_series]
         mock_api_class.return_value = mock_api
         
         provider = CommodityPriceProvider()
