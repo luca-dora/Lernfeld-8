@@ -1,11 +1,11 @@
-"""Integration tests for usd_as_eur function using real yfinance data."""
+"""Integration tests for CurrencyConverter class using real yfinance data."""
 import sys
 from pathlib import Path
 
 # Add src to path so we can import the module
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
-from yfinance_abfrage import usd_as_eur, get_usd_eur
+from market_data import CurrencyConverter
 
 
 def test_usd_as_eur_integration():
@@ -15,14 +15,16 @@ def test_usd_as_eur_integration():
     Use mocked tests for unit testing to avoid network dependency.
     """
     try:
+        converter = CurrencyConverter()
+
         # Get current EUR/USD rate
-        rate = get_usd_eur()
+        rate = converter.get_exchange_rate("USD", "EUR")
         print(f"Current EUR/USD rate: {rate}")
         
         # Test conversion
         usd_amount = 100
-        eur_amount = usd_as_eur(usd_amount)
-        
+        eur_amount = converter.convert_amount(usd_amount, "USD", "EUR")
+
         print(f"{usd_amount} USD = {eur_amount:.2f} EUR")
         
         # Basic validations
