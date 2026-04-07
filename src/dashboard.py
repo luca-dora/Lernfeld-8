@@ -8,7 +8,7 @@ from market_data import (
     CurrencyConverter,
 )
 
-# WENN IHR DIE E-MAIL FUNKTION EINBAUT, HIER DIE '#' ENTFERNEN:
+# Für noch folgende E-Mail Alarm Implementation (erst dann auskommentieren!):
 # from alerting_service import AlertingService
 # alerting_service = AlertingService()
 
@@ -18,7 +18,7 @@ currency_converter = CurrencyConverter()
 def build_chart(df: pd.DataFrame, label: str, currency: str) -> go.Figure:
     price_col = f"Preis ({currency})"
     
-    # Einheit basierend auf dem Rohstoff-Namen bestimmen
+    # Einheit (Label an Y-Achse) basierend auf Rohstoff-Namen bestimmen
     einheit = ""
     if "Brent" in label or "Oil" in label or "Öl" in label:
         einheit = " / Barrel"
@@ -163,11 +163,11 @@ for col_ui, label in zip(metric_cols, selected_labels):
         elif "Kleiner" in alarm_condition and latest_price < alarm_threshold:
             is_triggered = True
 
-    # Visuelle Warnung & E-Mail Trigger
+    # Visuelle Warnung & ggf. E-Mail Trigger
     if is_triggered:
         st.error(f"🚨 ALARM: {label} hat die Grenze von {alarm_threshold} {currency} durchbrochen! (Aktueller Preis: {latest_price:.2f} {currency})")
         
-        # WENN IHR DIE E-MAIL FUNKTION EINBAUT, HIER DIE '#' ENTFERNEN:
+        # bei E-Mail Versand Implementation auskommentieren:
         # session_key = f"mail_sent_{label}"
         # if session_key not in st.session_state:
         #     alerting_service.send_email_alert(label, latest_price, alarm_condition, alarm_threshold)
