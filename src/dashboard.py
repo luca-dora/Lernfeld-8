@@ -8,13 +8,17 @@ from market_data import (
     CurrencyConverter,
 )
 
+# WENN IHR DIE E-MAIL FUNKTION EINBAUT, HIER DIE '#' ENTFERNEN:
+# from alerting_service import AlertingService
+# alerting_service = AlertingService()
+
 commodity_provider = CommodityPriceProvider()
 currency_converter = CurrencyConverter()
 
 def build_chart(df: pd.DataFrame, label: str, currency: str) -> go.Figure:
     price_col = f"Preis ({currency})"
     
-    # Einheit für Y-Achse Label basierend auf Rohstoff-Namen bestimmen
+    # Einheit basierend auf dem Rohstoff-Namen bestimmen
     einheit = ""
     if "Brent" in label or "Oil" in label or "Öl" in label:
         einheit = " / Barrel"
@@ -99,20 +103,25 @@ with st.sidebar:
         st.cache_data.clear()
         st.rerun()
 
-    # --- ALARM-EINSTELLUNGEN ---
+    # --- ALARM-EINSTELLUNGEN (Mypy-konform mit Type Hints) ---
     st.markdown("---")
-    st.subheader("⏰ Preisalarm")
+    st.subheader("🔔 Preisalarm")
     
     alarm_active = st.checkbox("Alarm aktivieren")
+
+    # Mypy Deklarationen für Null-Safety
+    alarm_asset: str | None = None
+    alarm_condition: str | None = None
+    alarm_threshold: float | None = None
+
     if alarm_active and selected_labels:
         alarm_asset = st.selectbox("Welcher Rohstoff?", options=selected_labels)
         alarm_condition = st.radio("Bedingung", options=["Größer als (>)", "Kleiner als (<)"], horizontal=True)
         alarm_threshold = st.number_input(f"Schwellenwert ({currency})", value=80.0, step=1.0)
-    else:
-        alarm_asset, alarm_condition, alarm_threshold = None, None, None
 
     st.markdown("---")
     st.caption("Datenquelle: Yahoo Finance (yfinance)  \nIntervall: 5 min | Zeitraum: 5 Tage")
+
 
 st.title("Rohstoff-Dashboard")
 st.caption("Echtzeit-Marktdaten · IT-Solutions GmbH")
@@ -145,19 +154,24 @@ for col_ui, label in zip(metric_cols, selected_labels):
     latest_price = df[price_col].iloc[-1]
     delta = provider.calculate_delta_percent(df, price_col)
 
-    # --- ALARM-PRÜFUNG ---
+    # --- ALARM-PRÜFUNG (Null-Safe für Mypy) ---
     is_triggered = False
-    if alarm_active and label == alarm_asset:
+    
+    if alarm_active and label == alarm_asset and alarm_condition is not None and alarm_threshold is not None:
         if "Größer" in alarm_condition and latest_price > alarm_threshold:
             is_triggered = True
         elif "Kleiner" in alarm_condition and latest_price < alarm_threshold:
             is_triggered = True
 
-    # Hinweis einblenden, wenn der Alarm ausgelöst wird
+    # Visuelle Warnung & E-Mail Trigger
     if is_triggered:
         st.error(f"🚨 ALARM: {label} hat die Grenze von {alarm_threshold} {currency} durchbrochen! (Aktueller Preis: {latest_price:.2f} {currency})")
         
-        # HIER KÖNNTE SPÄTER DER E-MAIL VERSAND REIN
+        # WENN IHR DIE E-MAIL FUNKTION EINBAUT, HIER DIE '#' ENTFERNEN:
+        # session_key = f"mail_sent_{label}"
+        # if session_key not in st.session_state:
+        #     alerting_service.send_email_alert(label, latest_price, alarm_condition, alarm_threshold)
+        #     st.session_state[session_key] = True
 
     short_name = " ".join(label.split()[:2])
     col_ui.metric(
@@ -175,7 +189,7 @@ for label, df in dataframes.items():
 with st.expander("📋  Rohdaten anzeigen"):
     for label, df in dataframes.items():
         st.markdown(f"**{label}**")
-        show_cols =["Datetime", f"Preis ({currency})"]
+        show_cols = ["Datetime", f"Preis ({currency})"]
         st.dataframe(
             df[show_cols].tail(50).sort_values("Datetime", ascending=False),
             width="stretch",
