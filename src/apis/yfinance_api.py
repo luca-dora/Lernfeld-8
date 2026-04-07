@@ -1,10 +1,9 @@
 import yfinance as yf
-from pandas import Series
-import pandas as pd
+from pandas import Series, DataFrame
 
 
 class YfinanceApi:
-    """Wrapper für yfinance zur Datenbeschaffung."""
+    """Wrapper für yfinance-Api"""
 
     def __init__(self, period: str = "5d", interval: str = "5m"):
         """
@@ -17,7 +16,7 @@ class YfinanceApi:
         self.period = period
         self.interval = interval
 
-    def get_data(self, tickers: list[str]) -> Series:
+    def get_close_data(self, tickers: list[str]) -> Series:
         """
         Ruft Daten für eine oder mehrere Tickers ab.
         
@@ -34,12 +33,9 @@ class YfinanceApi:
         if not tickers:
             raise ValueError("Tickerliste darf nicht leer sein")
         
-        data = yf.download(tickers, period=self.period, interval=self.interval, progress=False)
-        
-        # Überprüfe ob Close-Spalte vorhanden ist
-        if isinstance(data, pd.DataFrame):
-            if "Close" not in data.columns:
-                raise KeyError("'Close' Spalte nicht in yfinance-Daten gefunden")
-        
-        # nur die Spalte 'Close' benötigt
+        data: DataFrame = yf.download(tickers, period=self.period, interval=self.interval, progress=False)
+
+        if "Close" not in data.columns:
+            raise KeyError("'Close' Spalte nicht in yfinance-Daten gefunden")
+
         return data['Close']

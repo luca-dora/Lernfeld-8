@@ -41,7 +41,7 @@ class TestYfinanceApiGetData:
         })
         
         api = YfinanceApi(period="5d", interval="5m")
-        api.get_data(["BZ=F"])
+        api.get_close_data(["BZ=F"])
         
         mock_download.assert_called_once()
         # Überprüfe Parameter
@@ -61,7 +61,7 @@ class TestYfinanceApiGetData:
         mock_download.return_value = mock_df
         
         api = YfinanceApi()
-        result = api.get_data(["BZ=F"])
+        result = api.get_close_data(["BZ=F"])
         
         assert isinstance(result, (pd.Series, pd.DataFrame))
 
@@ -75,7 +75,7 @@ class TestYfinanceApiGetData:
         mock_download.return_value = mock_df
         
         api = YfinanceApi()
-        result = api.get_data(["BZ=F", "NG=F"])
+        result = api.get_close_data(["BZ=F", "NG=F"])
         
         # Überprüfe, dass download mit beiden Tickers aufgerufen wurde
         mock_download.assert_called_once()
@@ -91,7 +91,7 @@ class TestYfinanceApiGetData:
         })
         
         api = YfinanceApi()
-        result = api.get_data(["BZ=F"])
+        result = api.get_close_data(["BZ=F"])
         
         # Sollte Close Spalte sein
         assert "Close" in result.columns if isinstance(result, pd.DataFrame) else True
@@ -117,7 +117,7 @@ class TestYfinanceApiParameterValidation:
         
         for period in ["1d", "5d", "1mo", "3mo", "1y"]:
             api = YfinanceApi(period=period)
-            api.get_data(["BZ=F"])
+            api.get_close_data(["BZ=F"])
             
             call_args = mock_download.call_args
             assert call_args[1]["period"] == period
@@ -129,7 +129,7 @@ class TestYfinanceApiParameterValidation:
         
         for interval in ["5m", "15m", "1h", "1d"]:
             api = YfinanceApi(interval=interval)
-            api.get_data(["BZ=F"])
+            api.get_close_data(["BZ=F"])
             
             call_args = mock_download.call_args
             assert call_args[1]["interval"] == interval
@@ -146,14 +146,14 @@ class TestYfinanceApiErrorHandling:
         api = YfinanceApi()
         
         with pytest.raises(Exception):
-            api.get_data(["INVALID_TICKER"])
+            api.get_close_data(["INVALID_TICKER"])
 
     def test_get_data_with_empty_ticker_list(self):
         """Test: Leere Tickerliste wirft ValueError."""
         api = YfinanceApi()
         
         with pytest.raises(ValueError, match="Tickerliste darf nicht leer sein"):
-            api.get_data([])
+            api.get_close_data([])
 
 
 if __name__ == "__main__":

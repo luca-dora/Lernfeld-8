@@ -2,7 +2,6 @@
 
 import pandas as pd
 from pandas import Series
-from typing import Optional
 
 from apis.yfinance_api import YfinanceApi
 
@@ -18,19 +17,11 @@ class MarketDataProvider:
             period: Standard-Zeitraum (z.B. "1d", "5d")
             interval: Standard-Intervall (z.B. "5m", "1h")
         """
-        self.period = period
-        self.interval = interval
+        self.api = YfinanceApi(period=period, interval=interval)
 
-    def _create_api_instance(self, period: Optional[str] = None, interval: Optional[str] = None) -> YfinanceApi:
-        """Erzeugt eine YfinanceApi-Instanz mit den gegebenen (oder Standard-)Parametern."""
-        period = period or self.period
-        interval = interval or self.interval
-        return YfinanceApi(period=period, interval=interval)
-
-    def fetch_ticker_data(self, ticker: str, period: Optional[str] = None, interval: Optional[str] = None) -> Series:
+    def fetch_ticker_data(self, ticker: str) -> Series:
         """Ruft Rohdaten für einen Ticker ab."""
-        api = self._create_api_instance(period, interval)
-        return api.get_data([ticker])
+        return self.api.get_close_data([ticker])
 
     def get_latest_price(self, ticker: str) -> float:
         """Gibt den aktuellsten Preis für einen Ticker zurück."""
@@ -91,9 +82,9 @@ class MarketDataProvider:
         df = df.rename(columns={"Close": "Preis (USD)"})
         return df
 
-    def get_ohlc_data(self, ticker: str, period: Optional[str] = None, interval: Optional[str] = None) -> pd.DataFrame:
+    def get_ohlc_data(self, ticker: str) -> pd.DataFrame:
         """Ruft OHLCV-Daten ab und bereitet sie auf."""
-        raw_data = self.fetch_ticker_data(ticker, period=period, interval=interval)
+        raw_data = self.fetch_ticker_data(ticker)
         return self._prepare_ohlc_dataframe(raw_data)
 
     def calculate_delta_percent(self, df: pd.DataFrame, col: str) -> float:

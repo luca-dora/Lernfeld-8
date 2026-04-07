@@ -22,9 +22,9 @@ class CommodityPriceProvider(MarketDataProvider):
 
     def get_oil_ohlc(self, period: str = "5d") -> pd.DataFrame:
         """Gibt OHLCV-Daten für Brent Öl zurück."""
-        return self.get_ohlc_data(BRENT_OIL, period=period)
+        return self.get_ohlc_data(BRENT_OIL)
 
     def get_gas_ohlc(self, period: str = "5d") -> pd.DataFrame:
         """Gibt OHLCV-Daten für Natural Gas zurück."""
-        return self.get_ohlc_data(NATURAL_GAS, period=period)
+        return self.get_ohlc_data(NATURAL_GAS)
 

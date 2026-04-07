@@ -5,7 +5,7 @@ NATURAL_GAS = "NG=F"
 EUR_USD = "USDEUR=X"
 
 TICKER_MAP: dict[str, str] = {
-    "Brent Oil (BZ=F)": BRENT_OIL,
-    "Natural Gas (NG=F)": NATURAL_GAS,
+    "Brent Oil (" + BRENT_OIL + ")": BRENT_OIL,
+    "Natural Gas (" + NATURAL_GAS + ")": NATURAL_GAS,
 }
 
