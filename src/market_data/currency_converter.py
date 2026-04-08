@@ -22,7 +22,7 @@ class CurrencyConverter(MarketDataProvider):
         Returns:
             Wechselkurs
         """
-        ticker = f"{source}{target}=X"
+        ticker: str = f"{source}{target}=X"
         return self.get_latest_price(ticker)
 
     def convert_amount(self, amount: float, source: str = "USD", target: str = "EUR") -> float:
